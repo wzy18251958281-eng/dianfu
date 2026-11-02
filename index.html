@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<!-- 本工作台通过 WorkBuddy「资料库」skill 搭建、存储和部署 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F7">
+<title>垫付</title>
+<style>
+  :root{
+    --bg:#F2F2F7; --card:#FFFFFF;
+    --ink:#1C1C1E; --ink2:#8E8E93; --ink3:#C7C7CC;
+    --hair:#E9E9EE; --fill:#EFEFF4;
+    --accent:#0A84FF; --red:#FF3B30; --orange:#FF9500; --green:#34C759;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(56px + env(safe-area-inset-bottom));
+  }
+  h1,h2,h3,p{margin:0}
+  button{font-family:inherit;cursor:pointer}
+  input{font-family:inherit}
+  img{max-width:100%;height:auto}
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+  /* ---------- 顶部 ---------- */
+  .hd{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:calc(16px + env(safe-area-inset-top)) 2px 0;
+  }
+  .hd h1{font-size:17px;font-weight:600;letter-spacing:.3px}
+  .hd-right{display:flex;align-items:center;gap:2px}
+  .sync{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);margin-right:4px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ink3);display:inline-block}
+  .dot.ok{background:var(--green)}
+  .dot.bad{background:var(--red)}
+  .icon-btn{
+    width:44px;height:44px;border:0;background:none;color:var(--ink2);
+    display:flex;align-items:center;justify-content:center;border-radius:50%;
+  }
+  .icon-btn:active{background:rgba(0,0,0,.04)}
+
+  /* ---------- 大数 ---------- */
+  .hero{padding:22px 2px 18px}
+  .hero-label{font-size:13px;color:var(--ink2);letter-spacing:.3px}
+  .hero-num{
+    display:flex;align-items:baseline;gap:2px;margin-top:2px;
+    font-size:clamp(34px,10vw,42px);font-weight:600;letter-spacing:-1.4px;line-height:1.12;
+    font-variant-numeric:tabular-nums;
+  }
+  .hero-num .cur{font-size:22px;font-weight:500;color:var(--ink2);letter-spacing:0;margin-right:1px}
+  .hero-sub{font-size:13px;color:var(--ink2);margin-top:4px;font-variant-numeric:tabular-nums}
+
+  /* ---------- 记一笔 ---------- */
+  .card{background:var(--card);border-radius:18px;padding:2px 16px 14px;box-shadow:0 1px 3px rgba(0,0,0,.035)}
+  .amount-row{display:flex;align-items:center;border-bottom:1px solid var(--hair)}
+  .amount-row .cur{font-size:26px;font-weight:500;color:var(--ink3);margin-right:4px}
+  #f-amount{
+    flex:1;min-width:0;border:0;background:none;outline:none;
+    padding:12px 0 10px;font-size:34px;font-weight:600;letter-spacing:-1px;
+    color:var(--ink);font-variant-numeric:tabular-nums;
+  }
+  input::placeholder{color:var(--ink3);font-weight:400;letter-spacing:0}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+  #f-purpose{
+    width:100%;border:0;border-bottom:1px solid var(--hair);background:none;outline:none;
+    padding:13px 0;font-size:16px;color:var(--ink);
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px}
+  .date-chip{
+    position:relative;display:inline-flex;align-items:center;gap:5px;
+    height:40px;padding:0 10px;margin-right:-10px;border-radius:10px;
+    font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;
+  }
+  .date-chip:active{background:var(--fill)}
+  .date-chip input{
+    position:absolute;inset:0;width:100%;height:100%;
+    opacity:0;border:0;padding:0;margin:0;
+  }
+  .date-chip svg{flex:0 0 auto;color:var(--ink3)}
+  .primary{
+    width:100%;height:50px;border:0;border-radius:14px;background:var(--ink);color:#fff;
+    font-size:16px;font-weight:600;letter-spacing:.5px;margin-top:14px;
+    transition:opacity .15s;
+  }
+  .primary:active{opacity:.82}
+  .primary[disabled]{opacity:.4}
+
+  /* ---------- 分段控件 ---------- */
+  .seg{display:inline-flex;background:var(--fill);border-radius:9px;padding:2px;gap:2px}
+  .seg button{
+    border:0;background:none;color:var(--ink);font-weight:500;
+    font-size:13px;height:32px;padding:0 14px;border-radius:7px;min-width:64px;
+    transition:background .15s;
+  }
+  .seg button.on{background:#fff;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+  /* ---------- 列表 ---------- */
+  .list-sec{margin-top:24px}
+  .sec-head{display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px}
+  .seg-sm button{height:28px;font-size:12px;min-width:56px;padding:0 12px}
+  .sec-count{font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .grp{margin-bottom:18px}
+  .grp-h{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding:0 4px 7px;font-size:12px;color:var(--ink2);
+  }
+  .grp-h b{font-weight:500}
+  .grp-h span{font-variant-numeric:tabular-nums}
+  .grp-body{background:var(--card);border-radius:14px;overflow:hidden}
+  .rec{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;
+    border-bottom:1px solid var(--hair);
+  }
+  .grp-body .rec:last-child{border-bottom:none}
+  .rec:active{background:#F7F7FA}
+  .rec-main{flex:1;min-width:0}
+  .rec-title{
+    font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .rec-meta{
+    font-size:12px;color:var(--ink2);margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;
+  }
+  .rec-right{flex:0 0 auto;text-align:right}
+  .rec-amt{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+  .rec-amt .rmb{font-size:12px;font-weight:500;margin-right:1px}
+  .tag-status{font-size:11px;color:var(--ink3);margin-top:2px;font-variant-numeric:tabular-nums}
+  .rec.over .tag-status{color:var(--orange)}
+  .rec.done .rec-title{color:#6E6E73}
+  .rec.done .rec-amt{color:var(--ink2);font-weight:500}
+  .empty{text-align:center;padding:38px 10px;color:var(--ink2);font-size:13px;line-height:1.7}
+  .empty b{display:block;font-size:15px;font-weight:500;color:var(--ink);margin-bottom:3px}
+
+  /* ---------- 动作面板 ---------- */
+  .sheet-wrap{position:fixed;inset:0;z-index:60;display:none}
+  .sheet-wrap.open{display:block}
+  .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.32);opacity:0;transition:opacity .22s}
+  .sheet-wrap.show .backdrop{opacity:1}
+  .sheet{
+    position:absolute;left:50%;top:50%;width:calc(100% - 40px);max-width:400px;
+    background:#fff;border-radius:18px;overflow:hidden auto;max-height:80vh;
+    box-shadow:0 22px 56px rgba(0,0,0,.26);
+    opacity:0;transform:translate(-50%,-46%) scale(.97);
+    transition:transform .26s cubic-bezier(.32,.72,0,1),opacity .18s;
+  }
+  .sheet-wrap.show .sheet{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .sheet h3{font-size:13px;font-weight:500;color:var(--ink2);text-align:center;padding:16px 20px 12px}
+  .it{
+    display:block;width:100%;border:0;background:none;padding:16px 20px;
+    font-size:17px;color:var(--accent);text-align:center;
+    border-top:1px solid var(--hair);
+  }
+  .it:active{background:#F2F2F7}
+  .it.danger{color:var(--red)}
+  .it.cancel{font-weight:600;color:var(--ink);border-top:6px solid var(--bg)}
+  [hidden]{display:none !important}
+  .confirm-text{padding:16px 24px 14px;font-size:13px;color:var(--ink2);text-align:center;line-height:1.65;border-bottom:1px solid var(--hair)}
+  .sheet-info{padding:16px 20px 14px;text-align:center;border-bottom:1px solid var(--hair)}
+  .sheet-info b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+  .sheet-info span{display:block;font-size:12px;color:var(--ink2);margin-top:3px;font-variant-numeric:tabular-nums}
+  .sheet-body{padding:4px 20px 18px}
+  .field-row{display:flex;gap:10px;padding:4px 0 14px}
+  .field-row label{flex:1;font-size:12px;color:var(--ink2)}
+  .field-row input{
+    width:100%;height:44px;margin-top:5px;padding:0 10px;border:1px solid var(--hair);
+    border-radius:11px;font-size:16px;color:var(--ink);background:#fff;outline:none;
+  }
+  .field-row input:focus{border-color:var(--ink3)}
+  .scope-line{padding:2px 0 16px}
+  .paste-box{
+    width:100%;border:1px solid var(--hair);border-radius:12px;padding:10px 12px;
+    font-size:13px;line-height:1.6;color:var(--ink);background:#fff;resize:none;outline:none;
+    font-family:inherit;box-sizing:border-box;
+  }
+  .paste-box:focus{border-color:var(--ink3)}
+  .btn-plain{
+    width:100%;height:50px;border:0;border-radius:14px;background:var(--fill);color:var(--ink);
+    font-size:16px;font-weight:500;margin-top:10px;
+  }
+  .btn-plain:active{opacity:.8}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;bottom:calc(36px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(14px);
+    background:rgba(28,28,30,.94);color:#fff;font-size:13px;padding:10px 16px;border-radius:12px;
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:99;max-width:84vw;
+    text-align:center;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- 行模板 ---------- */
+  #rowTpl{display:none}
+
+  /* ---------- 打印 ---------- */
+  #printArea{display:none}
+  @media print{
+    body{background:#fff;padding:0}
+    #app{display:none !important}
+    #printArea{display:block !important}
+    .sheet-wrap,#toast{display:none !important}
+    #printArea .p-title{font-size:19px;font-weight:700;text-align:center;letter-spacing:3px;margin-bottom:5px}
+    #printArea .p-sub{font-size:12px;color:#444;text-align:center;margin-bottom:14px}
+    #printArea table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+    #printArea th,#printArea td{border:1px solid #333;padding:5px 6px;text-align:left}
+    #printArea th{background:#f0f0f0;font-weight:700}
+    #printArea td.n,#printArea th.n{text-align:right}
+    #printArea .p-total{margin-top:10px;font-size:12.5px;line-height:1.9}
+    #printArea .p-sign{margin-top:30px;font-size:12.5px;display:flex;gap:56px}
+  }
+
+  @media (min-width:560px){
+    .sheet{max-width:420px}
+  }
+  @media (max-width:360px){
+    .seg button{min-width:58px;padding:0 10px}
+    #f-date{width:100px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="wrap">
+
+    <header class="hd">
+      <h1>垫付</h1>
+      <div class="hd-right">
+        <span class="sync"><span class="dot" id="syncDot"></span><span id="syncText">本机保存</span></span>
+        <button type="button" class="icon-btn" id="btnMenu" aria-label="更多">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.8"></circle>
+            <circle cx="12" cy="12" r="1.8"></circle>
+            <circle cx="19" cy="12" r="1.8"></circle>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-label">待报销</div>
+      <div class="hero-num"><span class="cur">¥</span><span id="kpiPending" data-sp-bindable="database" data-sp-database-id="OXVsXJvx12cRzfq6WehRQh">0.00</span></div>
+      <div class="hero-sub" id="kpiPendingSub" data-sp-bindable="database" data-sp-database-id="OXVsXJvx12cRzfq6WehRQh">正在读取…</div>
+    </section>
+
+    <section class="card">
+      <form id="addForm" autocomplete="off" novalidate>
+        <div class="amount-row">
+          <span class="cur">¥</span>
+          <input id="f-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00" required>
+        </div>
+        <input id="f-purpose" name="purpose" type="text" maxlength="40" placeholder="用途，如 打印装订" required>
+        <div class="row">
+          <div class="seg" id="segDoc">
+            <button type="button" data-val="有发票" class="on">有发票</button>
+            <button type="button" data-val="无发票">无发票</button>
+          </div>
+          <div class="date-chip">
+            <input id="f-date" name="payDate" type="date" required aria-label="垫付日期">
+            <span id="dateLabel">今天</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect>
+              <path d="M8 3v4M16 3v4M3.5 10h17"></path>
+            </svg>
+          </div>
+        </div>
+        <input type="hidden" name="docType" id="f-doctype" value="有发票">
+        <button type="submit" class="primary" id="submitBtn">记下</button>
+      </form>
+    </section>
+
+    <section class="list-sec">
+      <div class="sec-head">
+        <div class="seg seg-sm" id="segFilter">
+          <button type="button" data-f="pending" class="on">待报销</button>
+          <button type="button" data-f="all">全部</button>
+        </div>
+        <span class="sec-count" id="listCount"></span>
+      </div>
+      <div id="recList"><div class="empty">正在读取…</div></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 行模板 -->
+<div id="rowTpl" hidden>
+  <div class="rec">
+    <div class="rec-main">
+      <div class="rec-title"></div>
+      <div class="rec-meta"><span class="rec-date"></span> · <span class="tag-doctype"></span></div>
+    </div>
+    <div class="rec-right">
+      <div class="rec-amt"><span class="rmb">¥</span><span class="amt-num"></span></div>
+      <div class="tag-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 行操作 -->
+<div class="sheet-wrap" id="rowSheet" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <div class="sheet">
+    <div class="sheet-info"><b id="rsTitle"></b><span id="rsMeta"></span></div>
+    <div id="rsActions">
+      <button type="button" class="it" id="rsToggle">标记已报销</button>
+      <button type="button" class="it danger" id="rsDel">删除这笔</button>
+      <button type="button" class="it cancel" data-close>取消</button>
+    </div>
+    <div id="rsConfirm" hidden>
+      <div class="confirm-text">删除后不可恢复，确定删除这笔垫付？</div>
+      <button type="button" class="it danger" id="rsDelYes">确认删除</button>
+      <button type="button" class="it cancel" id="rsDelNo">再想想</button>
+    </div>
+  </div>
+</div>
+
+<!-- 菜单 -->
+<div class="sheet-wrap" id="menuSheet" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <div class="sheet">
+    <div id="menuActions">
+      <button type="button" class="it" id="menuExport">导出 / 打印</button>
+      <button type="button" class="it" id="menuCopy">备份到剪贴板</button>
+      <button type="button" class="it" id="menuPaste">从剪贴板恢复</button>
+      <button type="button" class="it" id="menuBackup">导出备份文件</button>
+      <button type="button" class="it" id="menuRestore">导入备份文件</button>
+      <button type="button" class="it" id="menuClear">清空示例数据</button>
+      <button type="button" class="it cancel" data-close>取消</button>
+    </div>
+    <div id="menuConfirm" hidden>
+      <div class="confirm-text">删掉所有示例记录？你自己记的账不受影响。</div>
+      <button type="button" class="it danger" id="menuClearYes">确认清空</button>
+      <button type="button" class="it cancel" id="menuClearNo">再想想</button>
+    </div>
+  </div>
+</div>
+
+<!-- 粘贴恢复 -->
+<div class="sheet-wrap" id="pasteSheet" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <div class="sheet">
+    <h3>粘贴备份内容</h3>
+    <div class="sheet-body">
+      <textarea id="pasteBox" class="paste-box" rows="6" placeholder="把之前复制的备份文本整段粘贴到这里"></textarea>
+      <button type="button" class="primary" id="pasteOk" style="margin-top:12px">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导出 -->
+<div class="sheet-wrap" id="exportSheet" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <div class="sheet">
+    <h3>按日期导出</h3>
+    <div class="sheet-body">
+      <div class="field-row">
+        <label>起始<input type="date" id="expFrom"></label>
+        <label>截止<input type="date" id="expTo"></label>
+      </div>
+      <div class="scope-line">
+        <div class="seg" id="segScope">
+          <button type="button" data-s="all" class="on">全部</button>
+          <button type="button" data-s="pending">待报销</button>
+          <button type="button" data-s="done">已报销</button>
+        </div>
+      </div>
+      <button type="button" class="primary" id="btnCsv" style="margin-top:0">导出表格</button>
+      <button type="button" class="btn-plain" id="btnPrint">打印 / 存为 PDF</button>
+    </div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+<input type="file" id="restoreFile" accept="application/json,.json" hidden>
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'wb_advance_ledger_v1';
+  var DRAFT_KEY = 'wb_advance_ledger_draft_v2';
+  var OVERDUE_DAYS = 30;
+
+  var F = {
+    purpose: '用途',
+    amount: '金额',
+    docType: '票据类型',
+    status: '报销状态',
+    date: '垫付日期'
+  };
+
+  var state = {
+    rows: [],
+    options: {},
+    filter: 'pending',
+    scope: 'all',
+    activeId: '',
+    loaded: false
+  };
+
+  /* ---------------- 本机存储 ---------------- */
+  function storeRead() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      var arr = JSON.parse(raw);
+      if (Object.prototype.toString.call(arr) !== '[object Array]') return null;
+      return arr;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function storeWrite(rows) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(rows));
+      return true;
+    } catch (e) {
+      console.error('[ledger] 本机存储写入失败', e);
+      return false;
+    }
+  }
+
+  function uid() {
+    return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function shiftDate(days) {
+    var d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  /* ---------------- 工具 ---------------- */
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function dateStr(v) {
+    if (!v) return '';
+    return String(v).slice(0, 10);
+  }
+
+  function fmtDot(v) {
+    var s = dateStr(v);
+    if (!s) return '日期未填';
+    var p = s.split('-');
+    if (p.length !== 3) return s;
+    var y = new Date().getFullYear();
+    if (Number(p[0]) === y) return p[1] + '-' + p[2];
+    return p[0] + '-' + p[1] + '-' + p[2];
+  }
+
+  function fmtFull(v) {
+    var s = dateStr(v);
+    return s || '日期未填';
+  }
+
+  function daysSince(v) {
+    var s = dateStr(v);
+    if (!s) return 0;
+    var p = s.split('-');
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    var t = new Date();
+    var t0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    return Math.floor((t0.getTime() - d.getTime()) / 86400000);
+  }
+
+  function money(n) {
+    var v = Number(n);
+    if (isNaN(v)) v = 0;
+    var parts = v.toFixed(2).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  }
+
+  function optText(field, v) {
+    if (v === null || v === undefined || v === '') return '';
+    var list = state.options[field] || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === v) return list[i].text;
+    }
+    if (typeof v === 'object') return '';
+    return String(v);
+  }
+
+  function optId(field, text) {
+    var list = state.options[field] || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].text === text) return list[i].id;
+    }
+    return text;
+  }
+
+  function num(v) {
+    var n = Number(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function mk(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== null && text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function svgEl(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (Object.prototype.hasOwnProperty.call(attrs, k)) e.setAttribute(k, attrs[k]);
+      }
+    }
+    return e;
+  }
+
+  function markBound(el) { /* 本机存储版无需绑定 */ }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'show';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = ''; }, 2400);
+  }
+
+  function setSync(kind, text) {
+    var dot = document.getElementById('syncDot');
+    var tx = document.getElementById('syncText');
+    if (dot) dot.className = 'dot ' + kind;
+    if (tx) tx.textContent = text;
+  }
+
+  /* ---------------- 数据 ---------------- */
+  function loadAll() {
+    var rows = storeRead();
+    if (!rows) {
+      rows = seedRows();
+      storeWrite(rows);
+    }
+    restoreDraft();
+    state.rows = rows;
+    state.loaded = true;
+    setSync('ok', '本机保存');
+    refreshAll();
+  }
+
+  function seedRows() {
+    var list = [
+      buildRecord('【示例】打印装订调研报告', 86, '有发票', shiftDate(0)),
+      buildRecord('【示例】打车赴区政协开会', 42.5, '无发票', shiftDate(-2)),
+      buildRecord('【示例】接待用茶叶', 268, '有发票', shiftDate(-43)),
+      buildRecord('【示例】科室办公用品采购', 156.8, '有发票', shiftDate(-1)),
+      buildRecord('【示例】加班订餐', 78, '无发票', shiftDate(-35))
+    ];
+    list[3][F.status] = '已报销';
+    list[4][F.status] = '已报销';
+    return list;
+  }
+
+  function buildRecord(purpose, amount, docType, payDate) {
+    var r = {};
+    r._id = uid();
+    r._ts = Date.now();
+    r[F.purpose] = purpose;
+    r[F.amount] = Number(amount);
+    r[F.docType] = docType;
+    r[F.status] = '待报销';
+    r[F.date] = payDate;
+    return r;
+  }
+
+  /* ---------------- 统一刷新 ---------------- */
+  function refreshAll() {
+    renderHero();
+    renderList();
+  }
+
+  function pendingRows() {
+    var out = [];
+    for (var i = 0; i < state.rows.length; i++) {
+      if (optText(F.status, state.rows[i][F.status]) !== '已报销') out.push(state.rows[i]);
+    }
+    return out;
+  }
+
+  function renderHero() {
+    var total = 0, cnt = 0, inv = 0, no = 0;
+    for (var i = 0; i < state.rows.length; i++) {
+      var r = state.rows[i];
+      if (optText(F.status, r[F.status]) === '已报销') continue;
+      var am = num(r[F.amount]);
+      total += am;
+      cnt++;
+      if (optText(F.docType, r[F.docType]) === '无发票') no++; else inv++;
+    }
+    var el = document.getElementById('kpiPending');
+    if (el) { el.textContent = money(total); markBound(el); }
+    var sub = document.getElementById('kpiPendingSub');
+    if (sub) {
+      sub.textContent = state.loaded
+        ? (cnt ? cnt + ' 笔 · 有票 ' + inv + ' · 无票 ' + no : '都报完了')
+        : '正在读取…';
+      markBound(sub);
+    }
+  }
+
+  function renderEmpty(title, desc) {
+    var box = document.getElementById('recList');
+    if (!box) return;
+    box.textContent = '';
+    var e = mk('div', 'empty');
+    e.appendChild(mk('b', '', title));
+    e.appendChild(document.createTextNode(desc));
+    box.appendChild(e);
+  }
+
+  /* ---------------- 列表 ---------------- */
+  function visibleRows() {
+    var src = state.filter === 'pending' ? pendingRows() : state.rows;
+    var out = src.slice();
+    out.sort(function (a, b) {
+      var da = dateStr(a[F.date]);
+      var db2 = dateStr(b[F.date]);
+      if (da < db2) return 1;
+      if (da > db2) return -1;
+      return (Number(b._ts) || 0) - (Number(a._ts) || 0);
+    });
+    return out;
+  }
+
+  function renderList() {
+    var box = document.getElementById('recList');
+    var countEl = document.getElementById('listCount');
+    if (!box) return;
+
+    if (!state.loaded) return;
+
+    var rows = visibleRows();
+    if (countEl) {
+      countEl.textContent = state.filter === 'pending'
+        ? (rows.length ? '共 ' + rows.length + ' 笔' : '')
+        : '共 ' + rows.length + ' 笔';
+    }
+
+    box.textContent = '';
+
+    if (!rows.length) {
+      var empty = mk('div', 'empty');
+      if (!state.rows.length) {
+        empty.appendChild(mk('b', '', '还没有记账'));
+        empty.appendChild(document.createTextNode('在上面记下第一笔垫付'));
+      } else if (state.filter === 'pending') {
+        empty.appendChild(mk('b', '', '都报完了'));
+        empty.appendChild(document.createTextNode('没有待报销的垫付'));
+      } else {
+        empty.appendChild(mk('b', '', '暂无记录'));
+        empty.appendChild(document.createTextNode('本月还没有垫付'));
+      }
+      box.appendChild(empty);
+      return;
+    }
+
+    var groups = {};
+    var order = [];
+    for (var i = 0; i < rows.length; i++) {
+      var k = dateStr(rows[i][F.date]).slice(0, 7) || 'unknown';
+      if (!groups[k]) { groups[k] = []; order.push(k); }
+      groups[k].push(rows[i]);
+    }
+    order.sort();
+    order.reverse();
+
+    var frag = document.createDocumentFragment();
+    for (var g = 0; g < order.length; g++) {
+      var key = order[g];
+      var list = groups[key];
+      var sub = 0;
+      for (var s = 0; s < list.length; s++) sub += num(list[s][F.amount]);
+
+      var wrap = mk('div', 'grp');
+      var head = mk('div', 'grp-h');
+      var label = '日期未填';
+      if (key !== 'unknown') {
+        var p = key.split('-');
+        label = p[0] + '年' + Number(p[1]) + '月';
+      }
+      head.appendChild(mk('b', '', label));
+      var sum = mk('span', '', '¥' + money(sub));
+      markBound(sum);
+      head.appendChild(sum);
+      wrap.appendChild(head);
+
+      var body = mk('div', 'grp-body');
+      for (var r = 0; r < list.length; r++) {
+        body.appendChild(buildRow(list[r]));
+      }
+      wrap.appendChild(body);
+      frag.appendChild(wrap);
+    }
+    box.appendChild(frag);
+  }
+
+  function buildRow(rec) {
+    var tpl = document.getElementById('rowTpl');
+    if (!tpl) return mk('div', 'rec');
+    var row = tpl.firstElementChild.cloneNode(true);
+
+    var st = optText(F.status, rec[F.status]) || '待报销';
+    var dt = optText(F.docType, rec[F.docType]) || '未填';
+    var isDone = st === '已报销';
+    var rid = String(rec.record_id || rec._id || '');
+    var days = daysSince(rec[F.date]);
+
+    row.className = 'rec' + (isDone ? ' done' : (days > OVERDUE_DAYS ? ' over' : ''));
+    row.setAttribute('data-id', rid);
+
+    var t = row.querySelector('.rec-title');
+    if (t) t.textContent = String(rec[F.purpose] || '未填用途');
+
+    var d = row.querySelector('.rec-date');
+    if (d) d.textContent = fmtDot(rec[F.date]);
+
+    var tg = row.querySelector('.tag-doctype');
+    if (tg) tg.textContent = dt;
+
+    var am = row.querySelector('.amt-num');
+    if (am) am.textContent = money(rec[F.amount]);
+
+    var stEl = row.querySelector('.tag-status');
+    if (stEl) {
+      if (isDone) stEl.textContent = '已报销';
+      else if (days > OVERDUE_DAYS) stEl.textContent = '已垫 ' + days + ' 天';
+      else stEl.textContent = '';
+    }
+    return row;
+  }
+
+  /* ---------------- 面板 ---------------- */
+  function openSheet(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    resetSheetView(id);
+    el.classList.add('open');
+    el.setAttribute('aria-hidden', 'false');
+    void el.offsetHeight;
+    el.classList.add('show');
+  }
+
+  function closeSheet(el) {
+    if (!el) return;
+    el.classList.remove('show');
+    el.setAttribute('aria-hidden', 'true');
+    setTimeout(function () {
+      if (!el.classList.contains('show')) el.classList.remove('open');
+    }, 260);
+  }
+
+  function closeAllSheets() {
+    var list = document.querySelectorAll('.sheet-wrap');
+    for (var i = 0; i < list.length; i++) closeSheet(list[i]);
+  }
+
+  // 面板有两种状态：动作列表 / 二次确认，每次打开都回到动作列表
+  function resetSheetView(id) {
+    if (id === 'rowSheet') {
+      var a = document.getElementById('rsActions');
+      var c = document.getElementById('rsConfirm');
+      if (a) a.hidden = false;
+      if (c) c.hidden = true;
+    } else if (id === 'menuSheet') {
+      var a2 = document.getElementById('menuActions');
+      var c2 = document.getElementById('menuConfirm');
+      if (a2) a2.hidden = false;
+      if (c2) c2.hidden = true;
+    }
+  }
+
+  function showConfirm(id, on) {
+    var isRow = id === 'rowSheet';
+    var a = document.getElementById(isRow ? 'rsActions' : 'menuActions');
+    var c = document.getElementById(isRow ? 'rsConfirm' : 'menuConfirm');
+    if (a) a.hidden = on;
+    if (c) c.hidden = !on;
+  }
+
+  function openRowSheet(id) {
+    var rec = null;
+    for (var i = 0; i < state.rows.length; i++) {
+      var rid = String(state.rows[i].record_id || state.rows[i]._id || '');
+      if (rid === id) { rec = state.rows[i]; break; }
+    }
+    if (!rec) return;
+    state.activeId = id;
+
+    var isDone = optText(F.status, rec[F.status]) === '已报销';
+    var t = document.getElementById('rsTitle');
+    if (t) t.textContent = String(rec[F.purpose] || '未填用途');
+    var m = document.getElementById('rsMeta');
+    if (m) {
+      m.textContent = fmtFull(rec[F.date]) + ' · ' + (optText(F.docType, rec[F.docType]) || '未填票据') + ' · ¥' + money(rec[F.amount]);
+    }
+    var tg = document.getElementById('rsToggle');
+    if (tg) {
+      tg.textContent = isDone ? '撤回为待报销' : '标记已报销';
+      tg.setAttribute('data-next', isDone ? '待报销' : '已报销');
+    }
+    openSheet('rowSheet');
+  }
+
+  /* ---------------- 表单 ---------------- */
+  function val(id) {
+    var el = document.getElementById(id);
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  function setVal(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.value = v;
+  }
+
+  function saveDraft() {
+    try {
+      var data = { amount: val('f-amount'), purpose: val('f-purpose'), docType: val('f-doctype') };
+      if (!data.amount && !data.purpose) {
+        localStorage.removeItem(DRAFT_KEY);
+      } else {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      }
+    } catch (e) { /* 忽略 */ }
+  }
+
+  function restoreDraft() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (!data) return;
+      if (data.amount) setVal('f-amount', data.amount);
+      if (data.purpose) setVal('f-purpose', data.purpose);
+      if (data.docType) selectDoc(data.docType);
+    } catch (e) { /* 忽略 */ }
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* 忽略 */ }
+  }
+
+  function selectDoc(text) {
+    var hidden = document.getElementById('f-doctype');
+    if (hidden) hidden.value = text;
+    var box = document.getElementById('segDoc');
+    if (!box) return;
+    var btns = box.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].className = btns[i].getAttribute('data-val') === text ? 'on' : '';
+    }
+  }
+
+  function submitRecord() {
+    var amount = val('f-amount');
+    var purpose = val('f-purpose');
+    var docType = val('f-doctype') || '有发票';
+    var payDate = val('f-date') || todayStr();
+
+    if (!purpose) { toast('写一下用途'); focusEl('f-purpose'); return; }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { toast('金额填一下'); focusEl('f-amount'); return; }
+
+    var btn = document.getElementById('submitBtn');
+    if (btn) btn.disabled = true;
+
+    var rows = storeRead() || [];
+    rows.push(buildRecord(purpose, amount, docType, payDate));
+    if (!storeWrite(rows)) {
+      setSync('bad', '保存失败');
+      toast('本机存储写不进去');
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    clearDraft();
+    setVal('f-amount', '');
+    setVal('f-purpose', '');
+    setVal('f-date', todayStr());
+    refreshDateLabel();
+    selectDoc(docType);
+    toast('已记下 ¥' + money(amount));
+    reload();
+    if (btn) btn.disabled = false;
+  }
+
+  function focusEl(id) {
+    var el = document.getElementById(id);
+    if (el) el.focus();
+  }
+
+  function reload() {
+    state.rows = storeRead() || [];
+    setSync('ok', '本机保存');
+    refreshAll();
+  }
+
+  function toggleStatus(id, next) {
+    if (!id) return;
+    var rows = storeRead() || [];
+    var hit = false;
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i]._id) === String(id)) { rows[i][F.status] = next; hit = true; break; }
+    }
+    if (!hit) { toast('没找到这笔记录'); return; }
+    if (!storeWrite(rows)) { setSync('bad', '保存失败'); toast('没改成功，请重试'); return; }
+    toast(next === '已报销' ? '已核销' : '已改回待报销');
+    reload();
+  }
+
+  function removeRecord(id) {
+    if (!id) { toast('没找到这笔记录'); return; }
+    var rows = storeRead() || [];
+    var left = [];
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i]._id) !== String(id)) left.push(rows[i]);
+    }
+    if (left.length === rows.length) { toast('没找到这笔记录'); return; }
+    if (!storeWrite(left)) { setSync('bad', '保存失败'); toast('没删成功，请重试'); return; }
+    toast('已删除');
+    reload();
+  }
+
+  /* ---------------- 备份 ---------------- */
+  function downloadBlob(content, filename, mime) {
+    try {
+      var blob = new Blob([content], { type: mime || 'application/octet-stream' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 300);
+    } catch (e) {
+      console.error('[ledger] 下载失败', e);
+      toast('导出失败，请重试');
+    }
+  }
+
+  function backupText() {
+    var rows = storeRead() || [];
+    return JSON.stringify({
+      app: 'advance-ledger',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      记录数: rows.length,
+      records: rows
+    }, null, 1);
+  }
+
+  function copyBackup() {
+    var rows = storeRead() || [];
+    var txt = backupText();
+    function ok() { toast('已复制 ' + rows.length + ' 条，粘到微信收藏即可'); }
+    function fail() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = txt;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok();
+      } catch (e) {
+        console.error('[ledger] 复制失败', e);
+        toast('复制失败，请改用导出备份文件');
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(ok).catch(fail);
+    } else {
+      fail();
+    }
+  }
+
+  function backupJson() {
+    var rows = storeRead() || [];
+    var payload = {
+      app: 'advance-ledger',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      记录数: rows.length,
+      records: rows
+    };
+    downloadBlob(JSON.stringify(payload, null, 2), '垫付备份-' + todayStr() + '.json', 'application/json');
+    toast('已导出 ' + rows.length + ' 条');
+  }
+
+  function importJson(text) {
+    var data;
+    try { data = JSON.parse(text); } catch (e) { toast('文件读不出来'); return; }
+    var incoming = null;
+    if (Object.prototype.toString.call(data) === '[object Array]') incoming = data;
+    else if (data && Object.prototype.toString.call(data.records) === '[object Array]') incoming = data.records;
+    if (!incoming) { toast('不是本应用的备份文件'); return; }
+
+    var rows = storeRead() || [];
+    // 若当前只有示例数据，导入前先清掉，避免和备份混在一起
+    var onlyDemo = rows.length > 0;
+    for (var d = 0; d < rows.length; d++) {
+      if (String(rows[d][F.purpose] || '').indexOf('【示例】') !== 0) { onlyDemo = false; break; }
+    }
+    if (onlyDemo) rows = [];
+
+    var byId = {};
+    for (var i = 0; i < rows.length; i++) byId[String(rows[i]._id)] = i;
+
+    var added = 0;
+    for (var j = 0; j < incoming.length; j++) {
+      var r = incoming[j];
+      if (!r || typeof r !== 'object') continue;
+      var purpose = r[F.purpose];
+      if (purpose === undefined || purpose === null || String(purpose) === '') continue;
+      var rec = {};
+      rec._id = r._id ? String(r._id) : uid();
+      rec[F.purpose] = String(purpose);
+      rec[F.amount] = Number(r[F.amount]) || 0;
+      rec[F.docType] = String(r[F.docType] || '有发票');
+      rec[F.status] = String(r[F.status] || '待报销');
+      rec[F.date] = String(r[F.date] || todayStr()).slice(0, 10);
+      rec._ts = Number(r._ts) || Date.now();
+
+      var key = String(rec._id);
+      if (byId[key] !== undefined) rows[byId[key]] = rec;
+      else { rows.push(rec); added++; }
+    }
+
+    if (!storeWrite(rows)) { toast('写入失败，空间可能已满'); return; }
+    toast(added ? '已导入 ' + added + ' 条' : '没有新增记录');
+    reload();
+  }
+
+  /* ---------------- 导出 ---------------- */
+  function pickRows() {
+    var from = val('expFrom');
+    var to = val('expTo');
+    var out = [];
+    for (var i = 0; i < state.rows.length; i++) {
+      var r = state.rows[i];
+      var d = dateStr(r[F.date]);
+      if (from && d && d < from) continue;
+      if (to && d && d > to) continue;
+      var st = optText(F.status, r[F.status]);
+      if (state.scope === 'pending' && st === '已报销') continue;
+      if (state.scope === 'done' && st !== '已报销') continue;
+      out.push(r);
+    }
+    out.sort(function (a, b) {
+      var da = dateStr(a[F.date]);
+      var db2 = dateStr(b[F.date]);
+      if (da < db2) return -1;
+      if (da > db2) return 1;
+      return 0;
+    });
+    return out;
+  }
+
+  function csvCell(v) {
+    var s = (v === null || v === undefined) ? '' : String(v);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function exportCsv() {
+    var rows = pickRows();
+    if (!rows.length) { toast('这段时间没有记录'); return; }
+
+    var lines = [];
+    lines.push(['垫付日期', '用途', '金额(元)', '票据类型', '报销状态'].join(','));
+    var total = 0, pend = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var am = num(r[F.amount]);
+      var st = optText(F.status, r[F.status]);
+      total += am;
+      if (st !== '已报销') pend += am;
+      lines.push([
+        csvCell(dateStr(r[F.date])),
+        csvCell(r[F.purpose] || ''),
+        csvCell(am.toFixed(2)),
+        csvCell(optText(F.docType, r[F.docType])),
+        csvCell(st)
+      ].join(','));
+    }
+    lines.push('');
+    lines.push(['合计', rows.length + ' 笔', total.toFixed(2), '待报 ' + pend.toFixed(2), ''].join(','));
+
+    var name = '垫付_' + (val('expFrom') || '起始') + '至' + (val('expTo') || '至今') + '.csv';
+    try {
+      var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      toast('已导出 ' + rows.length + ' 笔');
+    } catch (e) {
+      console.error('[ledger] 导出失败', e);
+      toast('导出失败，换个浏览器试试');
+    }
+  }
+
+  function intToUpper(num2) {
+    var digit = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+    var unit1 = ['', '拾', '佰', '仟'];
+    var unit0 = ['', '万', '亿', '万亿'];
+    var groups = [];
+    var n = Math.floor(num2);
+    while (n > 0) { groups.push(n % 10000); n = Math.floor(n / 10000); }
+    var str = '';
+    for (var g = groups.length - 1; g >= 0; g--) {
+      var seg = groups[g];
+      if (seg === 0) continue;
+      var pos = [seg % 10, Math.floor(seg / 10) % 10, Math.floor(seg / 100) % 10, Math.floor(seg / 1000) % 10];
+      var segStr = '';
+      var pendingZero = false;
+      var started = false;
+      for (var p = 3; p >= 0; p--) {
+        var d = pos[p];
+        if (d === 0) {
+          if (started) pendingZero = true;
+        } else {
+          if (pendingZero) { segStr += '零'; pendingZero = false; }
+          segStr += digit[d] + unit1[p];
+          started = true;
+        }
+      }
+      if (seg < 1000 && str !== '') str += '零';
+      str += segStr + unit0[g];
+    }
+    return str || '零';
+  }
+
+  function rmbUpper(n) {
+    var digit = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+    var v = Math.round(Math.abs(Number(n) || 0) * 100) / 100;
+    var head = Number(n) < 0 ? '负' : '';
+    var intPart = Math.floor(v);
+    var jiao = Math.floor(v * 10 + 1e-6) % 10;
+    var fen = Math.floor(v * 100 + 1e-6) % 10;
+    var frac;
+    if (jiao === 0 && fen === 0) {
+      frac = '整';
+    } else {
+      frac = jiao > 0 ? digit[jiao] + '角' : (fen > 0 ? '零' : '');
+      if (fen > 0) frac += digit[fen] + '分';
+    }
+    return head + intToUpper(intPart) + '元' + frac;
+  }
+
+  function exportPrint() {
+    var rows = pickRows();
+    if (!rows.length) { toast('这段时间没有记录'); return; }
+
+    var host = document.getElementById('printArea');
+    if (!host) return;
+    host.textContent = '';
+
+    var total = 0, pend = 0, invT = 0, noT = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var am = num(rows[i][F.amount]);
+      total += am;
+      if (optText(F.status, rows[i][F.status]) !== '已报销') pend += am;
+      if (optText(F.docType, rows[i][F.docType]) === '无发票') noT += am; else invT += am;
+    }
+
+    host.appendChild(mk('div', 'p-title', '单位垫付报销清单'));
+
+    var from = val('expFrom') || '最早';
+    var to = val('expTo') || '至今';
+    var scopeTxt = state.scope === 'pending' ? '仅待报销' : (state.scope === 'done' ? '仅已报销' : '全部');
+    host.appendChild(mk('div', 'p-sub',
+      '期间：' + from + ' 至 ' + to + '　|　范围：' + scopeTxt + '　|　共 ' + rows.length + ' 笔　|　' + todayStr()));
+
+    var table = document.createElement('table');
+    var cg = document.createElement('colgroup');
+    var widths = ['7%', '19%', '40%', '11%', '13%', '10%'];
+    for (var w = 0; w < widths.length; w++) {
+      var col = document.createElement('col');
+      col.style.width = widths[w];
+      cg.appendChild(col);
+    }
+    table.appendChild(cg);
+    var thead = document.createElement('thead');
+    var htr = document.createElement('tr');
+    var heads = ['序号', '垫付日期', '用途', '票据', '金额(元)', '状态'];
+    for (var h = 0; h < heads.length; h++) {
+      var th = document.createElement('th');
+      th.textContent = heads[h];
+      if (h === 0 || h === 4) th.className = 'n';
+      htr.appendChild(th);
+    }
+    thead.appendChild(htr);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    for (var k = 0; k < rows.length; k++) {
+      var r = rows[k];
+      var tr = document.createElement('tr');
+      var cells = [
+        String(k + 1),
+        dateStr(r[F.date]) || '',
+        String(r[F.purpose] || ''),
+        optText(F.docType, r[F.docType]) || '',
+        num(r[F.amount]).toFixed(2),
+        optText(F.status, r[F.status]) || ''
+      ];
+      for (var c = 0; c < cells.length; c++) {
+        var td = document.createElement('td');
+        td.textContent = cells[c];
+        if (c === 0 || c === 4) td.className = 'n';
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    host.appendChild(table);
+
+    host.appendChild(mk('div', 'p-total', '合计：¥' + money(total) + '　（大写：' + rmbUpper(total) + '）'));
+    host.appendChild(mk('div', 'p-total', '待报销 ¥' + money(pend) + '　|　有票 ¥' + money(invT) + '　|　无票 ¥' + money(noT)));
+
+    var sign = mk('div', 'p-sign');
+    sign.appendChild(mk('span', '', '经办人：'));
+    sign.appendChild(mk('span', '', '审核：'));
+    sign.appendChild(mk('span', '', '日期：'));
+    host.appendChild(sign);
+
+    setTimeout(function () {
+      try { window.print(); } catch (e) { toast('当前浏览器不支持打印'); }
+    }, 80);
+  }
+
+  function clearDemo() {
+    var rows = storeRead() || [];
+    var left = [];
+    for (var i = 0; i < rows.length; i++) {
+      var p = String(rows[i][F.purpose] || '');
+      if (p.indexOf('【示例】') !== 0) left.push(rows[i]);
+    }
+    if (left.length === rows.length) { toast('没有示例数据了'); return; }
+    if (!storeWrite(left)) { toast('没删成功，请重试'); return; }
+    toast('示例已清空');
+    reload();
+  }
+
+  /* ---------------- 事件 ---------------- */
+  function bind() {
+    var form = document.getElementById('addForm');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        submitRecord();
+      });
+      var t = null;
+      form.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'f-date') refreshDateLabel();
+        if (t) clearTimeout(t);
+        t = setTimeout(saveDraft, 300);
+      });
+      form.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'f-date') refreshDateLabel();
+      });
+    }
+
+    var segDoc = document.getElementById('segDoc');
+    if (segDoc) {
+      segDoc.addEventListener('click', function (e) {
+        var b = e.target.closest ? e.target.closest('button') : null;
+        if (!b) return;
+        selectDoc(b.getAttribute('data-val'));
+        saveDraft();
+      });
+    }
+
+    var segFilter = document.getElementById('segFilter');
+    if (segFilter) {
+      segFilter.addEventListener('click', function (e) {
+        var b = e.target.closest ? e.target.closest('button') : null;
+        if (!b) return;
+        state.filter = b.getAttribute('data-f');
+        var btns = segFilter.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].className = btns[i] === b ? 'on' : '';
+        }
+        renderList();
+      });
+    }
+
+    var list = document.getElementById('recList');
+    if (list) {
+      list.addEventListener('click', function (e) {
+        var row = e.target.closest ? e.target.closest('.rec') : null;
+        if (!row) return;
+        openRowSheet(row.getAttribute('data-id'));
+      });
+    }
+
+    var menu = document.getElementById('btnMenu');
+    if (menu) menu.addEventListener('click', function () { openSheet('menuSheet'); });
+
+    var mExport = document.getElementById('menuExport');
+    if (mExport) {
+      mExport.addEventListener('click', function () {
+        closeSheet(document.getElementById('menuSheet'));
+        setTimeout(function () { openSheet('exportSheet'); }, 120);
+      });
+    }
+
+    var mClear = document.getElementById('menuClear');
+    if (mClear) {
+      mClear.addEventListener('click', function () { showConfirm('menuSheet', true); });
+    }
+
+    var segScope = document.getElementById('segScope');
+    if (segScope) {
+      segScope.addEventListener('click', function (e) {
+        var b = e.target.closest ? e.target.closest('button') : null;
+        if (!b) return;
+        state.scope = b.getAttribute('data-s');
+        var btns = segScope.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].className = btns[i] === b ? 'on' : '';
+        }
+      });
+    }
+
+    var bCsv = document.getElementById('btnCsv');
+    if (bCsv) bCsv.addEventListener('click', exportCsv);
+    var bPrint = document.getElementById('btnPrint');
+    if (bPrint) bPrint.addEventListener('click', exportPrint);
+
+    var rsToggle = document.getElementById('rsToggle');
+    if (rsToggle) {
+      rsToggle.addEventListener('click', function () {
+        var next = rsToggle.getAttribute('data-next') || '已报销';
+        closeSheet(document.getElementById('rowSheet'));
+        setTimeout(function () { toggleStatus(state.activeId, next); }, 120);
+      });
+    }
+
+    var rsDel = document.getElementById('rsDel');
+    if (rsDel) {
+      rsDel.addEventListener('click', function () {
+        showConfirm('rowSheet', true);
+      });
+    }
+
+    var rsDelYes = document.getElementById('rsDelYes');
+    if (rsDelYes) {
+      rsDelYes.addEventListener('click', function () {
+        var id = state.activeId;
+        closeSheet(document.getElementById('rowSheet'));
+        state.activeId = '';
+        removeRecord(id);
+      });
+    }
+
+    var rsDelNo = document.getElementById('rsDelNo');
+    if (rsDelNo) {
+      rsDelNo.addEventListener('click', function () { showConfirm('rowSheet', false); });
+    }
+
+    var menuCopy = document.getElementById('menuCopy');
+    if (menuCopy) {
+      menuCopy.addEventListener('click', function () {
+        closeSheet(document.getElementById('menuSheet'));
+        copyBackup();
+      });
+    }
+
+    var menuPaste = document.getElementById('menuPaste');
+    if (menuPaste) {
+      menuPaste.addEventListener('click', function () {
+        closeSheet(document.getElementById('menuSheet'));
+        var box = document.getElementById('pasteBox');
+        if (box) box.value = '';
+        setTimeout(function () { openSheet('pasteSheet'); }, 140);
+      });
+    }
+
+    var pasteOk = document.getElementById('pasteOk');
+    if (pasteOk) {
+      pasteOk.addEventListener('click', function () {
+        var box = document.getElementById('pasteBox');
+        var txt = box ? String(box.value || '').trim() : '';
+        if (!txt) { toast('先把备份内容粘进来'); return; }
+        closeSheet(document.getElementById('pasteSheet'));
+        importJson(txt);
+      });
+    }
+
+    var menuBackup = document.getElementById('menuBackup');
+    if (menuBackup) {
+      menuBackup.addEventListener('click', function () {
+        closeSheet(document.getElementById('menuSheet'));
+        backupJson();
+      });
+    }
+
+    var menuRestore = document.getElementById('menuRestore');
+    var restoreFile = document.getElementById('restoreFile');
+    if (menuRestore && restoreFile) {
+      menuRestore.addEventListener('click', function () {
+        closeSheet(document.getElementById('menuSheet'));
+        restoreFile.value = '';
+        restoreFile.click();
+      });
+      restoreFile.addEventListener('change', function () {
+        var f = restoreFile.files && restoreFile.files[0];
+        if (!f) return;
+        var reader = new FileReader();
+        reader.onload = function () { importJson(String(reader.result || '')); };
+        reader.onerror = function () { toast('文件读不出来'); };
+        reader.readAsText(f, 'utf-8');
+      });
+    }
+
+    var menuClear = document.getElementById('menuClear');
+    if (menuClear) {
+      menuClear.addEventListener('click', function () { showConfirm('menuSheet', true); });
+    }
+
+    var menuClearYes = document.getElementById('menuClearYes');
+    if (menuClearYes) {
+      menuClearYes.addEventListener('click', function () {
+        closeSheet(document.getElementById('menuSheet'));
+        clearDemo();
+      });
+    }
+
+    var menuClearNo = document.getElementById('menuClearNo');
+    if (menuClearNo) {
+      menuClearNo.addEventListener('click', function () { showConfirm('menuSheet', false); });
+    }
+
+    document.addEventListener('click', function (e) {
+      var t2 = e.target.closest ? e.target.closest('[data-close]') : null;
+      if (t2) {
+        var wrap = t2.closest('.sheet-wrap');
+        closeSheet(wrap);
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAllSheets();
+    });
+  }
+
+  function refreshDateLabel() {
+    var el = document.getElementById('dateLabel');
+    if (!el) return;
+    var v = val('f-date');
+    if (!v || v === todayStr()) { el.textContent = '今天'; return; }
+    var p = v.split('-');
+    var y = new Date().getFullYear();
+    el.textContent = Number(p[0]) === y
+      ? (Number(p[1]) + '月' + Number(p[2]) + '日')
+      : (p[0] + '/' + p[1] + '/' + p[2]);
+  }
+
+  function initDates() {
+    var d = document.getElementById('f-date');
+    if (d && !d.value) d.value = todayStr();
+    refreshDateLabel();
+    var to = document.getElementById('expTo');
+    var from = document.getElementById('expFrom');
+    var now = new Date();
+    if (to && !to.value) to.value = todayStr();
+    if (from && !from.value) {
+      from.value = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-01';
+    }
+  }
+
+  function boot() {
+    initDates();
+    bind();
+    loadAll();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
